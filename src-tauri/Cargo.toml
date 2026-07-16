@@ -1,0 +1,29 @@
+[package]
+name = "localterminal"
+version = "0.1.0"
+description = "LocalTerminal — terminal 100% offline da suíte Local"
+authors = ["Taylor"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Anon5T4R/LocalTerminal"
+
+[lib]
+# O sufixo `_lib` evita conflito entre o nome da lib e o do binário no Windows
+# (https://github.com/rust-lang/cargo/issues/8519).
+name = "localterminal_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Motor de PTY (porte do LocalCode, sem tokio — std sync basta aqui).
+# ConPTY no Windows, openpty no Unix.
+portable-pty = "0.8"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"

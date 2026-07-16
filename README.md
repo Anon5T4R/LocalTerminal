@@ -1,0 +1,39 @@
+# LocalTerminal
+
+Terminal **100% offline** da suíte Local — o motor de PTY do LocalCode
+(portable-pty + xterm.js), agora como app standalone.
+
+## Recursos (v0.1)
+
+- **Abas** (Ctrl+Shift+T abre · Ctrl+Shift+W fecha · Ctrl+Tab alterna · botão
+  do meio fecha) — fechar a última aba fecha o app
+- **Perfis de shell detectados na máquina**: PowerShell 7 · Windows
+  PowerShell · cmd · Git Bash · **WSL (uma entrada por distro)** no Windows;
+  `$SHELL` + bash/zsh/fish no Linux — menu ▾ escolhe, padrão configurável
+- **Busca no terminal** (Ctrl+Shift+F, Enter/Shift+Enter navega)
+- **Copiar/colar** (Ctrl+Shift+C/V) + opção **copiar ao selecionar**
+- **Links clicáveis** (abrem no navegador padrão)
+- **Zoom da fonte** (Ctrl+= / Ctrl+-, persiste) · scrollback 10 mil linhas
+- Tema claro/escuro/sistema (o xterm acompanha) · UI em **PT/EN/ES**
+
+## Stack
+
+Tauri 2 + React 19 + Vite + TypeScript no front (`@xterm/xterm` + addons
+fit/search/web-links); Rust no back (`portable-pty` — ConPTY no Windows,
+openpty no Linux). Sem sidecar, sem rede.
+
+## Dev
+
+```bash
+npm install
+npm run tauri dev   # porta 1462
+```
+
+## Release
+
+Tag `vX.Y.Z` → GitHub Actions builda NSIS (Windows) + AppImage (Linux) e
+publica a Release. Parte da suíte [Local](https://github.com/Anon5T4R).
+
+## Licença
+
+MIT
