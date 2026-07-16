@@ -2,7 +2,9 @@
 //! Windows: PowerShell 7 · Windows PowerShell · cmd · Git Bash · WSL (por
 //! distro). Unix: $SHELL + bash/zsh/fish presentes.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(windows)]
+use std::path::PathBuf;
 
 use serde::Serialize;
 

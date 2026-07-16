@@ -127,11 +127,13 @@ impl TerminalManager {
     pub fn resize(&self, session_id: &str, rows: u16, cols: u16) -> Result<(), String> {
         let sessions = self.sessions.lock().unwrap();
         let s = sessions.get(session_id).ok_or("sessão não encontrada")?;
-        s.master
-            .lock()
-            .unwrap()
+        // Guard num binding próprio: temporário na expressão-cauda viveria
+        // além do `sessions` e o borrow checker recusa (E0597).
+        let master = s.master.lock().unwrap();
+        let r = master
             .resize(PtySize { rows, cols, pixel_width: 0, pixel_height: 0 })
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string());
+        r
     }
 
     pub fn kill(&self, session_id: &str) {
