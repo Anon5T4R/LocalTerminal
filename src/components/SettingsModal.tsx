@@ -24,6 +24,11 @@ export default function SettingsModal({ profiles }: { profiles: ShellProfile[] }
     { value: "system", label: t("settings.themeSystem") },
     { value: "light", label: t("settings.themeLight") },
     { value: "dark", label: t("settings.themeDark") },
+    { value: "nature", label: t("settings.themeNature") },
+    { value: "darkblue", label: t("settings.themeDarkBlue") },
+    { value: "calmgreen", label: t("settings.themeCalmGreen") },
+    { value: "pastelpink", label: t("settings.themePastelPink") },
+    { value: "punkprincess", label: t("settings.themePunkPrincess") },
   ];
 
   return (

@@ -1,7 +1,26 @@
 import { create } from "zustand";
 import { clampFontSize } from "../lib/util";
 
-export type Theme = "light" | "dark" | "system";
+export type Theme =
+  | "light"
+  | "dark"
+  | "system"
+  | "nature"
+  | "darkblue"
+  | "calmgreen"
+  | "pastelpink"
+  | "punkprincess";
+
+export const THEMES: Theme[] = [
+  "system",
+  "light",
+  "dark",
+  "nature",
+  "darkblue",
+  "calmgreen",
+  "pastelpink",
+  "punkprincess",
+];
 
 /** Fontes monoespaçadas oferecidas nas Configurações (fallbacks embutidos). */
 export const FONT_FAMILIES: { id: string; label: string; value: string }[] = [
@@ -46,7 +65,7 @@ const PROFILE_KEY = "localterminal.defaultProfile";
 
 function loadTheme(): Theme {
   const v = localStorage.getItem(THEME_KEY);
-  return v === "light" || v === "dark" || v === "system" ? v : "system";
+  return v && (THEMES as string[]).includes(v) ? (v as Theme) : "system";
 }
 
 /** Aplica o tema no <html data-theme> (resolvendo "system" pela mídia). */

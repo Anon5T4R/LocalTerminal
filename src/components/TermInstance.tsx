@@ -250,30 +250,44 @@ export default function TermInstance({ active, profile, onExit, onReady }: Props
   );
 }
 
+/** Conjunto ANSI (16 cores) para fundos claros — extraído do ramo light. */
+const ANSI_LIGHT: Partial<ITheme> = {
+  black: "#000000", red: "#cd3131", green: "#107c10", yellow: "#795e26",
+  blue: "#0451a5", magenta: "#bc05bc", cyan: "#0598bc", white: "#555555",
+  brightBlack: "#666666", brightRed: "#cd3131", brightGreen: "#14ce14",
+  brightYellow: "#b5ba00", brightBlue: "#0451a5", brightMagenta: "#bc05bc",
+  brightCyan: "#0598bc", brightWhite: "#000000",
+};
+
+/** Conjunto ANSI (16 cores) para fundos escuros — extraído do ramo dark. */
+const ANSI_DARK: Partial<ITheme> = {
+  black: "#000000", red: "#cd3131", green: "#0dbc79", yellow: "#e5e510",
+  blue: "#2472c8", magenta: "#bc3fbc", cyan: "#11b8bd", white: "#e5e5e5",
+  brightBlack: "#666666", brightRed: "#f14c4c", brightGreen: "#23d18b",
+  brightYellow: "#f5f543", brightBlue: "#3b8eea", brightMagenta: "#d670d6",
+  brightCyan: "#29b8db", brightWhite: "#e5e5e5",
+};
+
+/** Fundo claro? Decide por luminância perceptual (0..255). */
+function isLightBg(hex: string): boolean {
+  const h = hex.replace("#", "");
+  if (h.length < 6) return false;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 150;
+}
+
+/** Deriva o tema do xterm das CSS vars do app; ANSI escolhido por luminância. */
 function xtermTheme(): ITheme {
-  const th = document.documentElement.getAttribute("data-theme");
-  if (th === "light") {
-    return {
-      background: "#ffffff",
-      foreground: "#1e1e1e",
-      cursor: "#1e1e1e",
-      selectionBackground: "#add6ff",
-      black: "#000000", red: "#cd3131", green: "#107c10", yellow: "#795e26",
-      blue: "#0451a5", magenta: "#bc05bc", cyan: "#0598bc", white: "#555555",
-      brightBlack: "#666666", brightRed: "#cd3131", brightGreen: "#14ce14",
-      brightYellow: "#b5ba00", brightBlue: "#0451a5", brightMagenta: "#bc05bc",
-      brightCyan: "#0598bc", brightWhite: "#000000",
-    };
-  }
-  return {
-    background: "#10151d",
-    foreground: "#d4d4d4",
-    cursor: "#d4d4d4",
-    selectionBackground: "#264f78",
-    black: "#000000", red: "#cd3131", green: "#0dbc79", yellow: "#e5e510",
-    blue: "#2472c8", magenta: "#bc3fbc", cyan: "#11b8bd", white: "#e5e5e5",
-    brightBlack: "#666666", brightRed: "#f14c4c", brightGreen: "#23d18b",
-    brightYellow: "#f5f543", brightBlue: "#3b8eea", brightMagenta: "#d670d6",
-    brightCyan: "#29b8db", brightWhite: "#e5e5e5",
-  };
+  const cs = getComputedStyle(document.documentElement);
+  const readVar = (name: string, fallback: string) =>
+    cs.getPropertyValue(name).trim() || fallback;
+  const bg = readVar("--term-bg", "#10151d");
+  const light = isLightBg(bg);
+  const fg = light ? "#1e1e1e" : "#d4d4d4";
+  const cursor = readVar("--accent", fg);
+  const selectionBackground = readVar("--sel-bg", light ? "#add6ff" : "#264f78");
+  const ansi = light ? ANSI_LIGHT : ANSI_DARK;
+  return { background: bg, foreground: fg, cursor, selectionBackground, ...ansi };
 }
