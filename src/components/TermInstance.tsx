@@ -34,7 +34,7 @@ interface Props {
 
 /** Combos reservados pro app (xterm não engole; o window handler cuida). */
 function isAppCombo(e: KeyboardEvent): boolean {
-  if (e.ctrlKey && e.shiftKey && ["T", "W", "F", "C", "V"].includes(e.key.toUpperCase()))
+  if (e.ctrlKey && e.shiftKey && ["T", "W", "F", "D", "C", "V"].includes(e.key.toUpperCase()))
     return true;
   if (e.ctrlKey && e.key === "Tab") return true;
   if (e.ctrlKey && ["=", "+", "-"].includes(e.key)) return true;

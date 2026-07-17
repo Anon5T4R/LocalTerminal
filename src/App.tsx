@@ -7,10 +7,16 @@ import TermInstance, { type TermControls } from "./components/TermInstance";
 import Toasts from "./components/Toasts";
 import { useUi } from "./state/ui";
 
+interface Pane {
+  key: string;
+  profileId: string;
+}
 interface Tab {
   key: string;
   profileId: string;
   title: string;
+  /** 1 ou 2 painéis; 2 = dividido (lado a lado). */
+  panes: Pane[];
 }
 
 export default function App() {
@@ -21,44 +27,66 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const controlsRef = useRef(new Map<string, TermControls>());
+  const focusedPaneRef = useRef<string>("");
   const searchRef = useRef<HTMLInputElement>(null);
   const setSettingsOpen = useUi((s) => s.setSettingsOpen);
 
   const profileOf = (id: string) => profiles.find((p) => p.id === id) ?? profiles[0];
+  const activeTab = () => tabs.find((t) => t.key === activeKey);
 
   const openTab = (profileId?: string) => {
     setTabs((ts) => {
       const ui = useUi.getState();
-      const pid =
-        profileId ??
-        ui.defaultProfile ??
-        (profiles[0]?.id as string | undefined) ??
-        "";
+      const pid = profileId ?? ui.defaultProfile ?? (profiles[0]?.id as string | undefined) ?? "";
       if (!pid) return ts;
       const prof = profiles.find((p) => p.id === pid) ?? profiles[0];
       const key = crypto.randomUUID();
-      const title = tabTitle(prof.name, nextOrdinal(ts, prof.id));
+      const paneKey = crypto.randomUUID();
+      focusedPaneRef.current = paneKey;
       setActiveKey(key);
-      return [...ts, { key, profileId: prof.id, title }];
+      return [
+        ...ts,
+        { key, profileId: prof.id, title: tabTitle(prof.name, nextOrdinal(ts, prof.id)), panes: [{ key: paneKey, profileId: prof.id }] },
+      ];
     });
     setMenuOpen(false);
   };
 
+  /** Divide a aba ativa em 2 painéis (mesmo perfil). */
+  const splitActive = () => {
+    setTabs((ts) =>
+      ts.map((tb) => {
+        if (tb.key !== activeKey || tb.panes.length >= 2) return tb;
+        const paneKey = crypto.randomUUID();
+        focusedPaneRef.current = paneKey;
+        return { ...tb, panes: [...tb.panes, { key: paneKey, profileId: tb.profileId }] };
+      }),
+    );
+  };
+
+  const closePane = (tabKey: string, paneKey: string) => {
+    controlsRef.current.delete(paneKey);
+    setTabs((ts) =>
+      ts.flatMap((tb) => {
+        if (tb.key !== tabKey) return [tb];
+        const panes = tb.panes.filter((p) => p.key !== paneKey);
+        return panes.length === 0 ? [] : [{ ...tb, panes }];
+      }),
+    );
+  };
+
   const closeTab = (key: string) => {
-    controlsRef.current.delete(key);
+    const tb = tabs.find((x) => x.key === key);
+    tb?.panes.forEach((p) => controlsRef.current.delete(p.key));
     setTabs((ts) => ts.filter((x) => x.key !== key));
   };
 
-  // Boot: detecta shells e abre a 1ª aba.
   useEffect(() => {
     if (!isTauri) return;
-    void listShells().then((list) => {
-      setProfiles(list);
-    });
+    void listShells().then(setProfiles);
   }, []);
 
-  // Abre a primeira aba assim que os perfis chegam; depois disso, ficar sem
-  // aba = fechar o app (comportamento de terminal).
+  // Primeira aba quando os perfis chegam; sem aba depois disso = fecha o app.
   const everOpenedRef = useRef(false);
   useEffect(() => {
     if (profiles.length === 0) return;
@@ -79,19 +107,22 @@ export default function App() {
     }
   }, [tabs, activeKey]);
 
+  const focusedControls = () =>
+    controlsRef.current.get(focusedPaneRef.current) ??
+    controlsRef.current.get(activeTab()?.panes[0].key ?? "");
+
   useEffect(() => {
     if (searchOpen) {
       searchRef.current?.focus();
       searchRef.current?.select();
     } else {
       setQuery("");
-      controlsRef.current.get(activeKey)?.clearSearch();
-      controlsRef.current.get(activeKey)?.focus();
+      focusedControls()?.clearSearch();
+      focusedControls()?.focus();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchOpen]);
 
-  // Atalhos globais (o xterm libera os combos reservados).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const ui = useUi.getState();
@@ -103,6 +134,11 @@ export default function App() {
       if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === "W") {
         e.preventDefault();
         if (activeKey) closeTab(activeKey);
+        return;
+      }
+      if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === "D") {
+        e.preventDefault();
+        splitActive();
         return;
       }
       if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === "F") {
@@ -139,7 +175,7 @@ export default function App() {
   }, [activeKey]);
 
   const doSearch = (backwards: boolean) => {
-    const c = controlsRef.current.get(activeKey);
+    const c = focusedControls();
     if (!c || !query) return;
     if (backwards) c.findPrev(query);
     else c.findNext(query);
@@ -158,7 +194,10 @@ export default function App() {
                 if (e.button === 1) closeTab(tab.key);
               }}
             >
-              <span className="tab-label">{tab.title}</span>
+              <span className="tab-label">
+                {tab.title}
+                {tab.panes.length > 1 && " ⬒"}
+              </span>
               <button
                 className="tab-close"
                 title={t("tabs.close")}
@@ -195,6 +234,13 @@ export default function App() {
           </div>
         </div>
         <div className="topbar-actions">
+          <button
+            title={t("top.split")}
+            disabled={(activeTab()?.panes.length ?? 0) >= 2}
+            onClick={splitActive}
+          >
+            ⬒
+          </button>
           <button title={t("top.search")} onClick={() => setSearchOpen((v) => !v)}>
             🔍
           </button>
@@ -205,18 +251,40 @@ export default function App() {
       </div>
 
       <div className="term-body">
-        {tabs.map((tab) => {
-          const prof = profileOf(tab.profileId);
-          return prof ? (
-            <TermInstance
-              key={tab.key}
-              active={tab.key === activeKey}
-              profile={prof}
-              onExit={() => closeTab(tab.key)}
-              onReady={(c) => controlsRef.current.set(tab.key, c)}
-            />
-          ) : null;
-        })}
+        {tabs.map((tab) => (
+          <div
+            key={tab.key}
+            className="pane-grid"
+            style={{ display: tab.key === activeKey ? "flex" : "none" }}
+          >
+            {tab.panes.map((pane) => {
+              const prof = profileOf(pane.profileId);
+              return prof ? (
+                <div
+                  key={pane.key}
+                  className="pane"
+                  onMouseDownCapture={() => (focusedPaneRef.current = pane.key)}
+                >
+                  {tab.panes.length > 1 && (
+                    <button
+                      className="pane-close"
+                      title={t("tabs.close")}
+                      onClick={() => closePane(tab.key, pane.key)}
+                    >
+                      ×
+                    </button>
+                  )}
+                  <TermInstance
+                    active={tab.key === activeKey}
+                    profile={prof}
+                    onExit={() => closePane(tab.key, pane.key)}
+                    onReady={(c) => controlsRef.current.set(pane.key, c)}
+                  />
+                </div>
+              ) : null;
+            })}
+          </div>
+        ))}
 
         {searchOpen && (
           <div className="search-overlay">

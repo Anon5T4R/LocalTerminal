@@ -3,8 +3,13 @@
 Terminal **100% offline** da suíte Local — o motor de PTY do LocalCode
 (portable-pty + xterm.js), agora como app standalone.
 
-## Recursos (v0.1)
+## Recursos
 
+**v0.2**
+- **Dividir painel** (Ctrl+Shift+D): dois terminais lado a lado na mesma aba,
+  cada um com seu shell; fechar um painel volta pra um só
+
+**v0.1**
 - **Abas** (Ctrl+Shift+T abre · Ctrl+Shift+W fecha · Ctrl+Tab alterna · botão
   do meio fecha) — fechar a última aba fecha o app
 - **Perfis de shell detectados na máquina**: PowerShell 7 · Windows

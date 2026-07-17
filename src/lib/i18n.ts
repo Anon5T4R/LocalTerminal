@@ -22,6 +22,7 @@ const pt = {
   "tabs.newWith": "Novo terminal com…",
   "tabs.close": "Fechar aba (Ctrl+Shift+W)",
   "top.search": "Buscar no terminal (Ctrl+Shift+F)",
+  "top.split": "Dividir painel (Ctrl+Shift+D)",
   "top.settingsTitle": "Configurações",
 
   // Busca
@@ -49,7 +50,7 @@ const pt = {
   "settings.fontSize": "Tamanho da fonte",
   "settings.copyOnSelect": "Copiar automaticamente ao selecionar",
   "settings.shortcuts":
-    "Atalhos: Ctrl+Shift+T nova aba · Ctrl+Shift+W fecha · Ctrl+Tab troca · Ctrl+Shift+C/V copia/cola · Ctrl+Shift+F busca · Ctrl+= / Ctrl+- zoom",
+    "Atalhos: Ctrl+Shift+T nova aba · Ctrl+Shift+W fecha · Ctrl+Shift+D divide · Ctrl+Tab troca · Ctrl+Shift+C/V copia/cola · Ctrl+Shift+F busca · Ctrl+= / Ctrl+- zoom",
   "settings.about":
     " — terminal 100% offline (ConPTY/PTY nativo + xterm.js, motor portado do LocalCode). Abas, perfis de shell (PowerShell/cmd/Git Bash/WSL · bash/zsh/fish), busca e tema. Parte da suíte Local.",
   "dlg.ok": "OK",
@@ -62,6 +63,7 @@ const en: Record<MessageKey, string> = {
   "tabs.newWith": "New terminal with…",
   "tabs.close": "Close tab (Ctrl+Shift+W)",
   "top.search": "Search in terminal (Ctrl+Shift+F)",
+  "top.split": "Split pane (Ctrl+Shift+D)",
   "top.settingsTitle": "Settings",
 
   "search.placeholder": "Search…",
@@ -85,7 +87,7 @@ const en: Record<MessageKey, string> = {
   "settings.fontSize": "Font size",
   "settings.copyOnSelect": "Copy automatically on select",
   "settings.shortcuts":
-    "Shortcuts: Ctrl+Shift+T new tab · Ctrl+Shift+W close · Ctrl+Tab switch · Ctrl+Shift+C/V copy/paste · Ctrl+Shift+F search · Ctrl+= / Ctrl+- zoom",
+    "Shortcuts: Ctrl+Shift+T new tab · Ctrl+Shift+W close · Ctrl+Shift+D split · Ctrl+Tab switch · Ctrl+Shift+C/V copy/paste · Ctrl+Shift+F search · Ctrl+= / Ctrl+- zoom",
   "settings.about":
     " — 100% offline terminal (native ConPTY/PTY + xterm.js, engine ported from LocalCode). Tabs, shell profiles (PowerShell/cmd/Git Bash/WSL · bash/zsh/fish), search and themes. Part of the Local suite.",
   "dlg.ok": "OK",
@@ -96,6 +98,7 @@ const es: Record<MessageKey, string> = {
   "tabs.newWith": "Nueva terminal con…",
   "tabs.close": "Cerrar pestaña (Ctrl+Shift+W)",
   "top.search": "Buscar en la terminal (Ctrl+Shift+F)",
+  "top.split": "Dividir panel (Ctrl+Shift+D)",
   "top.settingsTitle": "Configuración",
 
   "search.placeholder": "Buscar…",
@@ -119,7 +122,7 @@ const es: Record<MessageKey, string> = {
   "settings.fontSize": "Tamaño de fuente",
   "settings.copyOnSelect": "Copiar automáticamente al seleccionar",
   "settings.shortcuts":
-    "Atajos: Ctrl+Shift+T nueva pestaña · Ctrl+Shift+W cierra · Ctrl+Tab cambia · Ctrl+Shift+C/V copia/pega · Ctrl+Shift+F busca · Ctrl+= / Ctrl+- zoom",
+    "Atajos: Ctrl+Shift+T nueva pestaña · Ctrl+Shift+W cierra · Ctrl+Shift+D divide · Ctrl+Tab cambia · Ctrl+Shift+C/V copia/pega · Ctrl+Shift+F busca · Ctrl+= / Ctrl+- zoom",
   "settings.about":
     " — terminal 100% offline (ConPTY/PTY nativo + xterm.js, motor portado del LocalCode). Pestañas, perfiles de shell (PowerShell/cmd/Git Bash/WSL · bash/zsh/fish), búsqueda y temas. Parte de la suite Local.",
   "dlg.ok": "OK",
