@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Terminal, type ITheme } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
@@ -17,12 +17,14 @@ import {
 import { t } from "../lib/i18n";
 import { useUi } from "../state/ui";
 
-/** Controles que a instância expõe pro App (busca/foco). */
+/** Controles que a instância expõe pro App (busca/foco/clipboard). */
 export interface TermControls {
   findNext: (q: string) => void;
   findPrev: (q: string) => void;
   clearSearch: () => void;
   focus: () => void;
+  copy: () => void;
+  paste: () => void;
 }
 
 interface Props {
@@ -54,9 +56,32 @@ export default function TermInstance({ active, profile, onExit, onReady }: Props
   const onExitRef = useRef(onExit);
   onExitRef.current = onExit;
   const fontSize = useUi((s) => s.fontSize);
+  const fontFamily = useUi((s) => s.fontFamily);
   const copyOnSelect = useUi((s) => s.copyOnSelect);
   const copyOnSelectRef = useRef(copyOnSelect);
   copyOnSelectRef.current = copyOnSelect;
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+
+  // Ações de clipboard/seleção — usadas pelos atalhos (via onReady) e pelo
+  // menu de contexto. Referenciam os refs, então funcionam a qualquer momento.
+  const doCopy = () => {
+    const sel = termRef.current?.getSelection();
+    if (sel) void navigator.clipboard.writeText(sel).catch(() => {});
+  };
+  const doPaste = async () => {
+    try {
+      const txt = await navigator.clipboard.readText();
+      if (txt && sessionRef.current) await writeTerminal(sessionRef.current, txt);
+    } catch {
+      /* clipboard vazio/sem permissão */
+    }
+    termRef.current?.focus();
+  };
+  const doSelectAll = () => termRef.current?.selectAll();
+  const doClear = () => {
+    termRef.current?.clear();
+    termRef.current?.focus();
+  };
 
   useEffect(() => {
     if (!containerRef.current || spawnedRef.current) return;
@@ -66,7 +91,7 @@ export default function TermInstance({ active, profile, onExit, onReady }: Props
       cursorBlink: true,
       cursorStyle: "block",
       fontSize: useUi.getState().fontSize,
-      fontFamily: "'Cascadia Code', 'Cascadia Mono', 'Fira Code', Consolas, monospace",
+      fontFamily: useUi.getState().fontFamily,
       scrollback: 10000,
       theme: xtermTheme(),
       allowProposedApi: true,
@@ -142,6 +167,8 @@ export default function TermInstance({ active, profile, onExit, onReady }: Props
       findPrev: (q) => search.findPrevious(q),
       clearSearch: () => search.clearDecorations(),
       focus: () => term.focus(),
+      copy: doCopy,
+      paste: doPaste,
     });
 
     return () => {
@@ -162,12 +189,13 @@ export default function TermInstance({ active, profile, onExit, onReady }: Props
     const term = termRef.current;
     if (!term) return;
     term.options.fontSize = fontSize;
+    term.options.fontFamily = fontFamily;
     fitRef.current?.fit();
     const dims = fitRef.current?.proposeDimensions();
     if (dims && sessionRef.current) {
       void resizeTerminal(sessionRef.current, dims.rows, dims.cols).catch(() => {});
     }
-  }, [fontSize]);
+  }, [fontSize, fontFamily]);
 
   // Refit + foco ao virar a aba ativa.
   useEffect(() => {
@@ -182,19 +210,44 @@ export default function TermInstance({ active, profile, onExit, onReady }: Props
     });
   }, [active]);
 
-  return (
-    <div
-      ref={containerRef}
-      className="term-container"
-      style={{ position: "absolute", inset: 0, display: active ? "block" : "none" }}
-    />
+  const menuItem = (label: string, fn: () => void, disabled = false) => (
+    <button
+      className="term-menu-item"
+      disabled={disabled}
+      onClick={() => {
+        setMenu(null);
+        fn();
+      }}
+    >
+      {label}
+    </button>
   );
-}
 
-/** Copia a seleção do terminal ativo / cola do clipboard (Ctrl+Shift+C/V). */
-export function copySelection(term: Terminal | null) {
-  const sel = term?.getSelection();
-  if (sel) void navigator.clipboard.writeText(sel).catch(() => {});
+  return (
+    <>
+      {/* O div do xterm não pode ter filhos React (o xterm gerencia o DOM dele). */}
+      <div
+        ref={containerRef}
+        className="term-container"
+        style={{ position: "absolute", inset: 0, display: active ? "block" : "none" }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setMenu({ x: e.clientX, y: e.clientY });
+        }}
+      />
+      {menu && active && (
+        <>
+          <div className="term-menu-backdrop" onMouseDown={() => setMenu(null)} />
+          <div className="term-menu" style={{ left: menu.x, top: menu.y }}>
+            {menuItem(t("menu.copy"), doCopy, !termRef.current?.hasSelection())}
+            {menuItem(t("menu.paste"), () => void doPaste())}
+            {menuItem(t("menu.selectAll"), doSelectAll)}
+            {menuItem(t("menu.clear"), doClear)}
+          </div>
+        </>
+      )}
+    </>
+  );
 }
 
 function xtermTheme(): ITheme {

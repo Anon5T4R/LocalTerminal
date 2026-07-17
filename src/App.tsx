@@ -146,6 +146,16 @@ export default function App() {
         setSearchOpen((v) => !v);
         return;
       }
+      if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === "C") {
+        e.preventDefault();
+        focusedControls()?.copy();
+        return;
+      }
+      if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === "V") {
+        e.preventDefault();
+        focusedControls()?.paste();
+        return;
+      }
       if (e.ctrlKey && e.key === "Tab") {
         e.preventDefault();
         setTabs((ts) => {

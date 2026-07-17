@@ -3,6 +3,16 @@ import { clampFontSize } from "../lib/util";
 
 export type Theme = "light" | "dark" | "system";
 
+/** Fontes monoespaçadas oferecidas nas Configurações (fallbacks embutidos). */
+export const FONT_FAMILIES: { id: string; label: string; value: string }[] = [
+  { id: "cascadia", label: "Cascadia Code", value: "'Cascadia Code', 'Cascadia Mono', Consolas, monospace" },
+  { id: "fira", label: "Fira Code", value: "'Fira Code', 'Cascadia Code', Consolas, monospace" },
+  { id: "jetbrains", label: "JetBrains Mono", value: "'JetBrains Mono', 'Cascadia Code', Consolas, monospace" },
+  { id: "consolas", label: "Consolas", value: "Consolas, 'Cascadia Mono', monospace" },
+  { id: "system", label: "Monospace do sistema", value: "ui-monospace, SFMono-Regular, Menlo, monospace" },
+];
+const DEFAULT_FONT = FONT_FAMILIES[0].value;
+
 export interface Toast {
   id: number;
   kind: "info" | "error" | "ok";
@@ -13,6 +23,7 @@ interface UiState {
   theme: Theme;
   settingsOpen: boolean;
   fontSize: number;
+  fontFamily: string;
   copyOnSelect: boolean;
   defaultProfile: string | null;
   toasts: Toast[];
@@ -20,6 +31,7 @@ interface UiState {
   setTheme: (t: Theme) => void;
   setSettingsOpen: (v: boolean) => void;
   setFontSize: (v: number) => void;
+  setFontFamily: (v: string) => void;
   setCopyOnSelect: (v: boolean) => void;
   setDefaultProfile: (id: string) => void;
   pushToast: (kind: Toast["kind"], text: string) => void;
@@ -28,6 +40,7 @@ interface UiState {
 
 const THEME_KEY = "localterminal.theme";
 const FONT_KEY = "localterminal.fontSize";
+const FONTFAM_KEY = "localterminal.fontFamily";
 const COPYSEL_KEY = "localterminal.copyOnSelect";
 const PROFILE_KEY = "localterminal.defaultProfile";
 
@@ -53,6 +66,7 @@ export const useUi = create<UiState>((set) => ({
   theme: loadTheme(),
   settingsOpen: false,
   fontSize: clampFontSize(Number(localStorage.getItem(FONT_KEY)) || 13),
+  fontFamily: localStorage.getItem(FONTFAM_KEY) || DEFAULT_FONT,
   copyOnSelect: localStorage.getItem(COPYSEL_KEY) === "1",
   defaultProfile: localStorage.getItem(PROFILE_KEY),
   toasts: [],
@@ -67,6 +81,10 @@ export const useUi = create<UiState>((set) => ({
     const fontSize = clampFontSize(v);
     localStorage.setItem(FONT_KEY, String(fontSize));
     set({ fontSize });
+  },
+  setFontFamily: (fontFamily) => {
+    localStorage.setItem(FONTFAM_KEY, fontFamily);
+    set({ fontFamily });
   },
   setCopyOnSelect: (copyOnSelect) => {
     localStorage.setItem(COPYSEL_KEY, copyOnSelect ? "1" : "0");

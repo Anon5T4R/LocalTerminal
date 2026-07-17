@@ -263,6 +263,41 @@ select {
   justify-content: center;
   z-index: 100;
 }
+
+/* Menu de contexto do terminal (clique direito) */
+.term-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+}
+.term-menu {
+  position: fixed;
+  z-index: 301;
+  min-width: 160px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+.term-menu-item {
+  text-align: left;
+  padding: 7px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--fg);
+  cursor: pointer;
+}
+.term-menu-item:hover:not(:disabled) {
+  background: var(--hover, var(--sel-bg));
+}
+.term-menu-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
 .modal {
   background: var(--panel);
   border: 1px solid var(--border);

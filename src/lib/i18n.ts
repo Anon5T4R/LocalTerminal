@@ -48,7 +48,12 @@ const pt = {
   "settings.language": "Idioma",
   "settings.defaultShell": "Shell padrão (novas abas)",
   "settings.fontSize": "Tamanho da fonte",
+  "settings.fontFamily": "Fonte",
   "settings.copyOnSelect": "Copiar automaticamente ao selecionar",
+  "menu.copy": "Copiar",
+  "menu.paste": "Colar",
+  "menu.selectAll": "Selecionar tudo",
+  "menu.clear": "Limpar",
   "settings.shortcuts":
     "Atalhos: Ctrl+Shift+T nova aba · Ctrl+Shift+W fecha · Ctrl+Shift+D divide · Ctrl+Tab troca · Ctrl+Shift+C/V copia/cola · Ctrl+Shift+F busca · Ctrl+= / Ctrl+- zoom",
   "settings.about":
@@ -85,7 +90,12 @@ const en: Record<MessageKey, string> = {
   "settings.language": "Language",
   "settings.defaultShell": "Default shell (new tabs)",
   "settings.fontSize": "Font size",
+  "settings.fontFamily": "Font",
   "settings.copyOnSelect": "Copy automatically on select",
+  "menu.copy": "Copy",
+  "menu.paste": "Paste",
+  "menu.selectAll": "Select all",
+  "menu.clear": "Clear",
   "settings.shortcuts":
     "Shortcuts: Ctrl+Shift+T new tab · Ctrl+Shift+W close · Ctrl+Shift+D split · Ctrl+Tab switch · Ctrl+Shift+C/V copy/paste · Ctrl+Shift+F search · Ctrl+= / Ctrl+- zoom",
   "settings.about":
@@ -120,7 +130,12 @@ const es: Record<MessageKey, string> = {
   "settings.language": "Idioma",
   "settings.defaultShell": "Shell predeterminado (pestañas nuevas)",
   "settings.fontSize": "Tamaño de fuente",
+  "settings.fontFamily": "Fuente",
   "settings.copyOnSelect": "Copiar automáticamente al seleccionar",
+  "menu.copy": "Copiar",
+  "menu.paste": "Pegar",
+  "menu.selectAll": "Seleccionar todo",
+  "menu.clear": "Limpiar",
   "settings.shortcuts":
     "Atajos: Ctrl+Shift+T nueva pestaña · Ctrl+Shift+W cierra · Ctrl+Shift+D divide · Ctrl+Tab cambia · Ctrl+Shift+C/V copia/pega · Ctrl+Shift+F busca · Ctrl+= / Ctrl+- zoom",
   "settings.about":

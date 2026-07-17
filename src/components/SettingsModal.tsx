@@ -1,6 +1,6 @@
 import type { ShellProfile } from "../lib/backend";
 import { LOCALE_LABELS, setLocale, t, useLocale, type Locale } from "../lib/i18n";
-import { useUi, type Theme } from "../state/ui";
+import { FONT_FAMILIES, useUi, type Theme } from "../state/ui";
 
 /** Configurações: tema, idioma, shell padrão, fonte, copiar ao selecionar. */
 export default function SettingsModal({ profiles }: { profiles: ShellProfile[] }) {
@@ -10,6 +10,8 @@ export default function SettingsModal({ profiles }: { profiles: ShellProfile[] }
   const setTheme = useUi((s) => s.setTheme);
   const fontSize = useUi((s) => s.fontSize);
   const setFontSize = useUi((s) => s.setFontSize);
+  const fontFamily = useUi((s) => s.fontFamily);
+  const setFontFamily = useUi((s) => s.setFontFamily);
   const copyOnSelect = useUi((s) => s.copyOnSelect);
   const setCopyOnSelect = useUi((s) => s.setCopyOnSelect);
   const defaultProfile = useUi((s) => s.defaultProfile);
@@ -76,6 +78,17 @@ export default function SettingsModal({ profiles }: { profiles: ShellProfile[] }
             <span className="font-size-value">{fontSize}</span>
             <button onClick={() => setFontSize(fontSize + 1)}>+</button>
           </div>
+        </div>
+
+        <div className="settings-row">
+          <span>{t("settings.fontFamily")}</span>
+          <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}>
+            {FONT_FAMILIES.map((f) => (
+              <option key={f.id} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="settings-row">
