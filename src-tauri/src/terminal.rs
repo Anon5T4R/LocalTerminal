@@ -36,6 +36,13 @@ pub struct TerminalManager {
     next_id: Mutex<u64>,
 }
 
+/// Trava um Mutex recuperando de poison: se outra thread panicou com a trava,
+/// seguir com o dado como está é melhor que panicar em cascata e derrubar o
+/// processo inteiro (todas as abas do terminal).
+fn lock_ok<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(|p| p.into_inner())
+}
+
 impl TerminalManager {
     pub fn spawn(
         &self,
@@ -67,28 +74,27 @@ impl TerminalManager {
             .spawn_command(builder)
             .map_err(|e| format!("Falha ao iniciar o shell: {e}"))?;
 
-        let master: Arc<Mutex<Box<dyn MasterPty + Send>>> = Arc::new(Mutex::new(pair.master));
-        let reader = master
-            .lock()
-            .unwrap()
+        // Reader/writer saem do master ANTES de ele entrar no Mutex: aqui ele
+        // ainda tem dono único, então não há trava (nem poison) pra tratar.
+        let master_box = pair.master;
+        let reader = master_box
             .try_clone_reader()
             .map_err(|e| format!("Falha ao clonar reader: {e}"))?;
         let writer = Arc::new(Mutex::new(
-            master
-                .lock()
-                .unwrap()
+            master_box
                 .take_writer()
                 .map_err(|e| format!("Falha ao obter writer: {e}"))?,
         ));
+        let master: Arc<Mutex<Box<dyn MasterPty + Send>>> = Arc::new(Mutex::new(master_box));
         let killer = Arc::new(Mutex::new(child.clone_killer()));
 
         let session_id = {
-            let mut id = self.next_id.lock().unwrap();
+            let mut id = lock_ok(&self.next_id);
             *id += 1;
             format!("term-{}", *id)
         };
 
-        self.sessions.lock().unwrap().insert(
+        lock_ok(&self.sessions).insert(
             session_id.clone(),
             Session { writer, master, killer },
         );
@@ -117,19 +123,19 @@ impl TerminalManager {
     }
 
     pub fn write(&self, session_id: &str, data: &str) -> Result<(), String> {
-        let sessions = self.sessions.lock().unwrap();
+        let sessions = lock_ok(&self.sessions);
         let s = sessions.get(session_id).ok_or("sessão não encontrada")?;
-        let mut w = s.writer.lock().unwrap();
+        let mut w = lock_ok(&s.writer);
         w.write_all(data.as_bytes()).map_err(|e| e.to_string())?;
         w.flush().map_err(|e| e.to_string())
     }
 
     pub fn resize(&self, session_id: &str, rows: u16, cols: u16) -> Result<(), String> {
-        let sessions = self.sessions.lock().unwrap();
+        let sessions = lock_ok(&self.sessions);
         let s = sessions.get(session_id).ok_or("sessão não encontrada")?;
         // Guard num binding próprio: temporário na expressão-cauda viveria
         // além do `sessions` e o borrow checker recusa (E0597).
-        let master = s.master.lock().unwrap();
+        let master = lock_ok(&s.master);
         let r = master
             .resize(PtySize { rows, cols, pixel_width: 0, pixel_height: 0 })
             .map_err(|e| e.to_string());
@@ -137,8 +143,8 @@ impl TerminalManager {
     }
 
     pub fn kill(&self, session_id: &str) {
-        if let Some(s) = self.sessions.lock().unwrap().remove(session_id) {
-            let _ = s.killer.lock().unwrap().kill();
+        if let Some(s) = lock_ok(&self.sessions).remove(session_id) {
+            let _ = lock_ok(&s.killer).kill();
         }
     }
 }

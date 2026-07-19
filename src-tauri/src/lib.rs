@@ -73,5 +73,6 @@ pub fn run() {
             kill_terminal,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        // Falha aqui é fatal por definição: sem o runtime Tauri não há app.
+        .expect("erro ao iniciar a aplicação Tauri");
 }
