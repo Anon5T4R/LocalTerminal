@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { isTauri, quakeConfig, quakeConfigSet, type QuakeConfig } from "../lib/backend";
+import {
+  isTauri,
+  quakeConfig,
+  quakeConfigSet,
+  trayConfig,
+  trayConfigSet,
+  type QuakeConfig,
+  type TrayConfig,
+} from "../lib/backend";
 import { LOCALE_LABELS, setLocale, t, useLocale, type Locale } from "../lib/i18n";
 import type { MenuEntry } from "../lib/profiles";
 import { FONT_FAMILIES, useUi, type Theme } from "../state/ui";
@@ -24,10 +32,34 @@ export default function SettingsModal({ entries }: { entries: MenuEntry[] }) {
   const [quakeErr, setQuakeErr] = useState<string | null>(null);
   const [quakeOk, setQuakeOk] = useState(false);
 
+  const [tray, setTray] = useState<TrayConfig | null>(null);
+  const [trayErr, setTrayErr] = useState<string | null>(null);
+
   useEffect(() => {
     if (!open || !isTauri || quake) return;
     void quakeConfig().then(setQuake).catch(() => {});
   }, [open, quake]);
+
+  useEffect(() => {
+    if (!open || !isTauri || tray) return;
+    void trayConfig().then(setTray).catch(() => {});
+  }, [open, tray]);
+
+  /**
+   * Mexer no registro do Windows pode falhar (política de grupo, antivírus).
+   * A checkbox reflete o pedido — a intenção FICA salva de qualquer jeito e o
+   * boot seguinte tenta de novo — mas a falha aparece, senão o usuário marca
+   * "abrir com o sistema" e descobre que não abriu só semanas depois.
+   */
+  const applyTray = async (next: TrayConfig) => {
+    setTray(next);
+    try {
+      await trayConfigSet(next);
+      setTrayErr(null);
+    } catch (e) {
+      setTrayErr(t("tray.failed", { err: String((e as Error)?.message ?? e) }));
+    }
+  };
 
   /**
    * Salva e tenta registrar. O REGISTRO é a única prova de que o atalho vale:
@@ -211,6 +243,37 @@ export default function SettingsModal({ entries }: { entries: MenuEntry[] }) {
 
             {quakeErr && <div className="banner err">{quakeErr}</div>}
             {quakeOk && !quakeErr && <div className="banner ok">{t("quake.saved")}</div>}
+          </>
+        )}
+
+        {tray && (
+          <>
+            <h3>{t("tray.title")}</h3>
+            <p className="muted small">{t("tray.help")}</p>
+
+            <div className="settings-row">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={tray.autostart ?? false}
+                  onChange={(e) => void applyTray({ ...tray, autostart: e.target.checked })}
+                />
+                {t("tray.autostart")}
+              </label>
+            </div>
+
+            <div className="settings-row">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={tray.closeToTray}
+                  onChange={(e) => void applyTray({ ...tray, closeToTray: e.target.checked })}
+                />
+                {t("tray.closeToTray")}
+              </label>
+            </div>
+
+            {trayErr && <div className="banner err">{trayErr}</div>}
           </>
         )}
 

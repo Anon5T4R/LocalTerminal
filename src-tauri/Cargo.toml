@@ -1,6 +1,6 @@
 [package]
 name = "localterminal"
-version = "0.5.1"
+version = "0.6.0"
 description = "LocalTerminal — terminal 100% offline da suíte Local"
 authors = ["Taylor"]
 edition = "2021"
@@ -17,7 +17,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+# tray-icon: a bandeja é o que permite o app viver em segundo plano com o
+# atalho do quake registrado — sem ela o recurso principal da v0.5.0 dependia
+# de o usuário deixar a janela aberta.
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -29,3 +32,14 @@ portable-pty = "0.8"
 tauri-plugin-single-instance = "2"
 # Quake mode: atalho global mostra/esconde a janela que desce do topo.
 tauri-plugin-global-shortcut = "2"
+# Abrir com o sistema (opt-in), direto na bandeja: é o que faz o quake mode
+# responder sem o usuário ter aberto o app antes.
+tauri-plugin-autostart = "2"
+
+[target.'cfg(windows)'.dependencies]
+# Lê a chave Run na mão pra decidir se o autostart precisa ser reimposto: o
+# `is_enabled()` do plugin só checa se a entrada EXISTE, sem comparar o caminho
+# (não enxerga entrada obsoleta), e não distingue "apagada" de "desligada pelo
+# Gerenciador de Tarefas" — que pedem respostas opostas.
+# Mesma versão que o `auto-launch` já usa: não entra crate nova na árvore.
+winreg = "0.55"

@@ -72,6 +72,22 @@ export function onQuakeShown(cb: () => void): Promise<UnlistenFn> {
   return listen("quake-shown", () => cb());
 }
 
+// --- Bandeja e autostart ----------------------------------------------------
+
+export interface TrayConfig {
+  /** `null` = o usuário nunca decidiu; o backend responde herdando o SO. */
+  autostart: boolean | null;
+  closeToTray: boolean;
+}
+
+export function trayConfig(): Promise<TrayConfig> {
+  return invoke("tray_config");
+}
+
+export function trayConfigSet(cfg: TrayConfig): Promise<void> {
+  return invoke("tray_config_set", { cfg });
+}
+
 export function onQuakeHiding(cb: () => void): Promise<UnlistenFn> {
   return listen("quake-hiding", () => cb());
 }

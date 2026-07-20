@@ -2,6 +2,7 @@ mod profiles;
 mod quake;
 mod shells;
 mod terminal;
+mod tray;
 
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -103,15 +104,27 @@ pub fn run() {
         // aba nova ali (é o caminho do "abrir aqui" do LocalFiles quando o
         // terminal JÁ está aberto — o caso comum).
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            if let Some(win) = app.get_webview_window("main") {
-                let _ = win.show();
-                let _ = win.unminimize();
-                let _ = win.set_focus();
+            // Um 2º launch com `--hidden` é o logon batendo num app que já está
+            // vivo: não estoura a janela na cara de quem está usando a máquina.
+            if !args.iter().any(|a| a == tray::HIDDEN_ARG) {
+                if let Some(win) = app.get_webview_window("main") {
+                    let _ = win.show();
+                    let _ = win.unminimize();
+                    let _ = win.set_focus();
+                }
             }
             if let Some(dir) = startup_dir_from(args.into_iter().skip(1)) {
                 let _ = app.emit_to("main", "open-cwd", dir);
             }
         }));
+
+        // Autostart: quando ligado, o app entra no logon com `--hidden` pra
+        // ficar só na bandeja com o atalho do quake registrado. É o que faz o
+        // quake mode existir sem o usuário abrir o app antes.
+        builder = builder.plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![tray::HIDDEN_ARG]),
+        ));
 
         builder = builder.plugin(
             // Sem atalho fixo: quem manda é o `quake.json`, aplicado no setup.
@@ -135,6 +148,15 @@ pub fn run() {
             profiles::init_state(&handle);
             quake::init_state(&handle);
             quake::apply_at_boot(&handle);
+
+            tray::init_state(&handle);
+            tray::build_tray(&handle)?;
+            tray::hook_close_to_tray(&handle);
+            tray::hide_if_started_hidden(&handle);
+            // Reimpõe o autostart conforme a intenção guardada. Numa thread à
+            // parte: mexe no registro e não deve segurar a abertura da janela.
+            let auto = handle.clone();
+            std::thread::spawn(move || tray::reconcile_autostart(&auto));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -149,6 +171,8 @@ pub fn run() {
             quake::quake_config,
             quake::quake_config_set,
             quake::quake_hide,
+            tray::tray_config,
+            tray::tray_config_set,
         ])
         .build(tauri::generate_context!())
         // Falha aqui é fatal por definição: sem o runtime Tauri não há app.

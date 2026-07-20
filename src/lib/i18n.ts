@@ -93,6 +93,14 @@ const pt = {
   "quake.fixIt": "Trocar o atalho",
   "quake.escHint": "Esc esconde",
 
+  // Bandeja e autostart
+  "tray.title": "Bandeja e início com o sistema",
+  "tray.help":
+    "Com o app na bandeja, o atalho do quake mode responde sem a janela estar aberta.",
+  "tray.autostart": "Abrir com o sistema (direto na bandeja)",
+  "tray.closeToTray": "Fechar a janela envia para a bandeja em vez de sair",
+  "tray.failed": "Não foi possível gravar no sistema: {err}",
+
   // Toasts
   "toast.copied": "Copiado",
 
@@ -195,6 +203,13 @@ const en: Record<MessageKey, string> = {
   "quake.fixIt": "Change the shortcut",
   "quake.escHint": "Esc hides",
 
+  "tray.title": "Tray and start with the system",
+  "tray.help":
+    "With the app in the tray, the quake mode shortcut works without the window being open.",
+  "tray.autostart": "Start with the system (straight to the tray)",
+  "tray.closeToTray": "Closing the window sends it to the tray instead of quitting",
+  "tray.failed": "Could not write to the system: {err}",
+
   "toast.copied": "Copied",
 
   "settings.title": "Settings",
@@ -292,6 +307,13 @@ const es: Record<MessageKey, string> = {
     "No se pudo registrar el atajo del modo quake (\"{accel}\") — otra app ya usa esa combinación.",
   "quake.fixIt": "Cambiar el atajo",
   "quake.escHint": "Esc oculta",
+
+  "tray.title": "Bandeja e inicio con el sistema",
+  "tray.help":
+    "Con la app en la bandeja, el atajo del modo quake responde sin que la ventana esté abierta.",
+  "tray.autostart": "Iniciar con el sistema (directo a la bandeja)",
+  "tray.closeToTray": "Cerrar la ventana la envía a la bandeja en vez de salir",
+  "tray.failed": "No se pudo escribir en el sistema: {err}",
 
   "toast.copied": "Copiado",
 
