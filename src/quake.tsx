@@ -27,7 +27,7 @@ import {
 } from "./lib/backend";
 import { t, useLocale } from "./lib/i18n";
 import { menuEntries, pickEntry, type TermProfile } from "./lib/profiles";
-import TermInstance from "./components/TermInstance";
+import TermInstance, { type TermControls } from "./components/TermInstance";
 import { applyTheme, useUi } from "./state/ui";
 
 function Quake() {
@@ -36,6 +36,7 @@ function Quake() {
   const [warn, setWarn] = useState<string | null>(null);
   // Ref além do state: o listener monta uma vez e não veria o state novo.
   const shownRef = useRef(false);
+  const ctlRef = useRef<TermControls | null>(null);
 
   useEffect(() => {
     if (!isTauri) return;
@@ -63,12 +64,30 @@ function Quake() {
     return () => void a.then((f) => f()).catch(() => {});
   }, []);
 
-  // Esc esconde. Só isso — fechar não existe: a janela é reusada.
+  /**
+   * Teclas da janela do quake.
+   *
+   * Copiar/colar PRECISA estar aqui: o `TermInstance` devolve `false` no
+   * `attachCustomKeyEventHandler` para os combos do app (Ctrl+Shift+C/V entre
+   * eles), contando que a janela trate. Na principal o `App.tsx` trata; aqui,
+   * sem este handler, o xterm ignorava a tecla e ninguém a pegava — o combo
+   * sumia no vazio e só o menu do botão direito funcionava.
+   */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         void quakeHide().catch(() => {});
+        return;
+      }
+      if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === "C") {
+        e.preventDefault();
+        ctlRef.current?.copy();
+        return;
+      }
+      if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === "V") {
+        e.preventDefault();
+        ctlRef.current?.paste();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -88,7 +107,7 @@ function Quake() {
             active
             profile={profile}
             onExit={() => void quakeHide().catch(() => {})}
-            onReady={() => {}}
+            onReady={(c) => (ctlRef.current = c)}
             onWarn={setWarn}
           />
         )}
