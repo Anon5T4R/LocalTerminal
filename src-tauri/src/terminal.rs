@@ -11,6 +11,25 @@ use portable_pty::{CommandBuilder, MasterPty, NativePtySystem, PtySize, PtySyste
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
+use crate::profiles::{redact_env_for_log, resolve_cwd, sanitize_env, EnvVar};
+
+/// Resultado do `spawn`: além do id, o que o backend teve que MUDAR do que foi
+/// pedido. Antes o `cwd` inexistente virava HOME em silêncio e a variável de
+/// ambiente inválida sumia; agora a UI recebe o desvio e avisa.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpawnResult {
+    pub session_id: String,
+    /// Diretório em que o shell realmente abriu.
+    pub cwd: Option<String>,
+    /// O diretório do perfil não existe mais (a UI mostra aviso).
+    pub cwd_fallback: bool,
+    /// Diretório que o perfil pedia (só pra montar a mensagem).
+    pub requested_cwd: Option<String>,
+    /// CHAVES das variáveis recusadas. Nunca os valores — perfil guarda token.
+    pub rejected_env: Vec<String>,
+}
+
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TerminalOutput {
@@ -50,18 +69,28 @@ impl TerminalManager {
         shell: String,
         args: Vec<String>,
         cwd: Option<String>,
-    ) -> Result<String, String> {
+        env: Vec<EnvVar>,
+    ) -> Result<SpawnResult, String> {
         let pty_system = NativePtySystem::default();
 
         let mut builder = CommandBuilder::new(shell);
         builder.args(args);
         // TERM decente pro Unix (o ConPTY do Windows ignora).
         builder.env("TERM", "xterm-256color");
-        let dir = cwd
-            .filter(|c| Path::new(c).is_dir())
-            .map(std::path::PathBuf::from)
-            .or_else(dirs_home);
-        if let Some(dir) = dir {
+
+        // Variáveis do perfil. As recusadas voltam SÓ pela chave.
+        let (env_ok, env_bad) = sanitize_env(&env);
+        for (k, v) in &env_ok {
+            builder.env(k, v);
+        }
+        if !env_ok.is_empty() {
+            // Única forma autorizada de imprimir o ambiente de um perfil.
+            eprintln!("[localterminal] {}", redact_env_for_log(&env_ok));
+        }
+
+        let home = dirs_home().map(|p| p.to_string_lossy().into_owned());
+        let res = resolve_cwd(cwd.as_deref(), home.as_deref(), |p| Path::new(p).is_dir());
+        if let Some(dir) = res.dir.as_deref() {
             builder.cwd(dir);
         }
 
@@ -119,7 +148,13 @@ impl TerminalManager {
             let _ = app.emit("terminal-exit", TerminalExit { session_id: sid });
         });
 
-        Ok(session_id)
+        Ok(SpawnResult {
+            session_id,
+            cwd: res.dir,
+            cwd_fallback: res.fell_back,
+            requested_cwd: res.requested,
+            rejected_env: env_bad.into_iter().map(|(k, _)| k).collect(),
+        })
     }
 
     pub fn write(&self, session_id: &str, data: &str) -> Result<(), String> {

@@ -493,3 +493,104 @@ select {
   background: var(--err-bg);
   border-color: var(--err-border);
 }
+
+/* ---------- avisos (banner) ---------- */
+/* Aviso que NÃO some sozinho: falha de atalho global é acionável (trocar a
+   combinação), então some quando o usuário resolve, não por tempo. */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+.banner span {
+  flex: 1;
+}
+.banner.err {
+  background: color-mix(in srgb, #e35d5d 18%, var(--panel));
+  border: 1px solid color-mix(in srgb, #e35d5d 45%, var(--border));
+}
+.banner.ok {
+  background: color-mix(in srgb, #3fae62 18%, var(--panel));
+  border: 1px solid color-mix(in srgb, #3fae62 45%, var(--border));
+}
+.app > .banner {
+  margin: 8px 10px 0;
+}
+
+/* ---------- menu de novo terminal ---------- */
+.menu-head {
+  padding: 6px 12px 3px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+}
+.menu-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 5px 4px;
+}
+.menu-item.active {
+  background: var(--panel-2);
+}
+
+/* ---------- perfis ---------- */
+.modal.wide {
+  width: min(820px, 94vw);
+}
+.profiles-grid {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+/* Janela estreita: as duas colunas viram uma só, senão o formulário fica
+   ilegível com 120px de largura. */
+@media (max-width: 640px) {
+  .profiles-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.profiles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-right: 1px solid var(--border);
+  padding-right: 12px;
+}
+.profiles-list-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.profiles-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+}
+.field > span {
+  color: var(--muted);
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.field textarea {
+  font-family: var(--mono, monospace);
+  resize: vertical;
+}

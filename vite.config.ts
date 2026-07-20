@@ -13,6 +13,20 @@ export default defineConfig(async () => ({
     dedupe: ["react", "react-dom"],
   },
 
+  // Duas páginas: o app (`index.html`) e o terminal do quake mode
+  // (`quake.html`, janela `quake`). Sem declarar as DUAS entradas o build só
+  // emitiria a index e o quake abriria EM BRANCO no instalador — funcionando
+  // o tempo todo em `tauri dev`, que serve o projeto inteiro pelo Vite.
+  // Achado pago no LocalTranslate 0.4.0; aqui já nasce certo.
+  build: {
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        quake: "quake.html",
+      },
+    },
+  },
+
   // Opções do Vite ajustadas pro Tauri (só em `tauri dev`/`tauri build`).
   clearScreen: false,
   server: {

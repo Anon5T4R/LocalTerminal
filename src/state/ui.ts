@@ -41,6 +41,7 @@ export interface Toast {
 interface UiState {
   theme: Theme;
   settingsOpen: boolean;
+  profilesOpen: boolean;
   fontSize: number;
   fontFamily: string;
   copyOnSelect: boolean;
@@ -49,6 +50,7 @@ interface UiState {
 
   setTheme: (t: Theme) => void;
   setSettingsOpen: (v: boolean) => void;
+  setProfilesOpen: (v: boolean) => void;
   setFontSize: (v: number) => void;
   setFontFamily: (v: string) => void;
   setCopyOnSelect: (v: boolean) => void;
@@ -84,6 +86,7 @@ let nextToast = 1;
 export const useUi = create<UiState>((set) => ({
   theme: loadTheme(),
   settingsOpen: false,
+  profilesOpen: false,
   fontSize: clampFontSize(Number(localStorage.getItem(FONT_KEY)) || 13),
   fontFamily: localStorage.getItem(FONTFAM_KEY) || DEFAULT_FONT,
   copyOnSelect: localStorage.getItem(COPYSEL_KEY) === "1",
@@ -96,6 +99,7 @@ export const useUi = create<UiState>((set) => ({
     set({ theme });
   },
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  setProfilesOpen: (profilesOpen) => set({ profilesOpen }),
   setFontSize: (v) => {
     const fontSize = clampFontSize(v);
     localStorage.setItem(FONT_KEY, String(fontSize));

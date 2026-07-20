@@ -1,0 +1,64 @@
+/* Janela do quake mode.
+ *
+ * A descida é uma TRANSFORM do conteúdo, não um movimento da janela do SO:
+ * animar `set_position` custa uma ida ao compositor por quadro e treme; a
+ * janela já está posicionada quando aparece, e só o conteúdo desliza. */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.quake {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--term-bg, #10151d);
+  border-bottom: 1px solid var(--border, #2a3240);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+  transform: translateY(-100%);
+  transition: transform 140ms ease-out;
+}
+
+.quake.open {
+  transform: translateY(0);
+}
+
+/* Quem prefere menos movimento não recebe a animação — o recurso é aparecer
+   rápido, e o deslize é enfeite. */
+@media (prefers-reduced-motion: reduce) {
+  .quake {
+    transition: none;
+  }
+}
+
+.quake-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--bg-2, #161c26);
+  border-bottom: 1px solid var(--border, #2a3240);
+  cursor: default;
+  user-select: none;
+}
+
+.quake-title {
+  font-weight: 600;
+}
+
+.quake-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.quake-empty {
+  padding: 12px;
+}

@@ -23,6 +23,7 @@ const pt = {
   "tabs.close": "Fechar aba (Ctrl+Shift+W)",
   "top.search": "Buscar no terminal (Ctrl+Shift+F)",
   "top.split": "Dividir painel (Ctrl+Shift+D)",
+  "top.profiles": "Perfis",
   "top.settingsTitle": "Configurações",
 
   // Busca
@@ -35,6 +36,62 @@ const pt = {
   "term.exited": "Processo encerrado",
   "term.spawnError": "Erro ao iniciar o shell: {error}",
   "term.noShells": "Nenhum shell detectado.",
+  "term.cwdMissing":
+    "A pasta do perfil não existe mais ({dir}) — abrimos em {fallback}.",
+  "term.envRejected":
+    "Variáveis de ambiente recusadas (nome inválido): {keys}. O valor não é mostrado.",
+  "term.openedHere": "Nova aba em {dir}",
+
+  // Perfis
+  "profiles.title": "Perfis",
+  "profiles.manage": "Gerenciar perfis…",
+  "profiles.saved": "Perfis salvos",
+  "profiles.detected": "Shells detectados",
+  "profiles.empty": "Nenhum perfil salvo ainda.",
+  "profiles.pick": "Escolha um perfil à esquerda, ou crie um novo.",
+  "profiles.add": "Novo",
+  "profiles.duplicate": "Duplicar",
+  "profiles.remove": "Remover",
+  "profiles.name": "Nome",
+  "profiles.shell": "Shell",
+  "profiles.args": "Argumentos",
+  "profiles.cwd": "Diretório inicial",
+  "profiles.cwdPlaceholder": "vazio = pasta do usuário",
+  "profiles.env": "Variáveis de ambiente",
+  "profiles.envHelp":
+    "Uma por linha, no formato NOME=valor (dá pra colar um .env). Os valores ficam só neste computador e nunca aparecem em log.",
+  "profiles.font": "Fonte",
+  "profiles.fontSize": "Tamanho da fonte",
+  "profiles.scheme": "Cores do terminal",
+  "profiles.inherit": "Herdar das Configurações",
+  "profiles.notInstalled": "não encontrado nesta máquina",
+  "profiles.shellMissing": "O shell {shell} não foi encontrado nesta máquina.",
+  "profiles.saveFailed": "Não foi possível salvar os perfis: {error}",
+
+  // Esquemas de cor do terminal
+  "scheme.classic": "Clássico",
+  "scheme.paper": "Papel",
+  "scheme.solarized": "Solarizado",
+  "scheme.grape": "Uva",
+  "scheme.matrix": "Matrix",
+
+  // Quake mode
+  "quake.title": "Quake mode",
+  "quake.help":
+    "Um terminal desce do topo da tela com um atalho global e some com o mesmo atalho, sempre por cima das outras janelas.",
+  "quake.enable": "Ligar o quake mode",
+  "quake.shortcut": "Atalho global",
+  "quake.height": "Altura",
+  "quake.width": "Largura",
+  "quake.profile": "Perfil do quake",
+  "quake.profileDefault": "Usar o perfil padrão",
+  "quake.saved": "Atalho registrado.",
+  "quake.busy":
+    "O sistema recusou \"{accel}\" — provavelmente já é atalho de outro app. Escolha outra combinação.",
+  "quake.bootBusy":
+    "O atalho do quake mode (\"{accel}\") não pôde ser registrado — outro app já usa essa combinação.",
+  "quake.fixIt": "Trocar o atalho",
+  "quake.escHint": "Esc esconde",
 
   // Toasts
   "toast.copied": "Copiado",
@@ -62,7 +119,7 @@ const pt = {
   "settings.shortcuts":
     "Atalhos: Ctrl+Shift+T nova aba · Ctrl+Shift+W fecha · Ctrl+Shift+D divide · Ctrl+Tab troca · Ctrl+Shift+C/V copia/cola · Ctrl+Shift+F busca · Ctrl+= / Ctrl+- zoom",
   "settings.about":
-    " — terminal 100% offline (ConPTY/PTY nativo + xterm.js, motor portado do LocalCode). Abas, perfis de shell (PowerShell/cmd/Git Bash/WSL · bash/zsh/fish), busca e tema. Parte da suíte Local.",
+    " — terminal 100% offline (ConPTY/PTY nativo + xterm.js, motor portado do LocalCode). Abas, painel dividido, perfis salvos (shell + diretório + variáveis + aparência), quake mode por atalho global, busca e tema. Parte da suíte Local.",
   "dlg.ok": "OK",
 } as const;
 
@@ -74,6 +131,7 @@ const en: Record<MessageKey, string> = {
   "tabs.close": "Close tab (Ctrl+Shift+W)",
   "top.search": "Search in terminal (Ctrl+Shift+F)",
   "top.split": "Split pane (Ctrl+Shift+D)",
+  "top.profiles": "Profiles",
   "top.settingsTitle": "Settings",
 
   "search.placeholder": "Search…",
@@ -84,6 +142,58 @@ const en: Record<MessageKey, string> = {
   "term.exited": "Process exited",
   "term.spawnError": "Failed to start the shell: {error}",
   "term.noShells": "No shell detected.",
+  "term.cwdMissing": "The profile folder no longer exists ({dir}) — opened in {fallback}.",
+  "term.envRejected":
+    "Environment variables rejected (invalid name): {keys}. The value is not shown.",
+  "term.openedHere": "New tab in {dir}",
+
+  "profiles.title": "Profiles",
+  "profiles.manage": "Manage profiles…",
+  "profiles.saved": "Saved profiles",
+  "profiles.detected": "Detected shells",
+  "profiles.empty": "No saved profile yet.",
+  "profiles.pick": "Pick a profile on the left, or create a new one.",
+  "profiles.add": "New",
+  "profiles.duplicate": "Duplicate",
+  "profiles.remove": "Remove",
+  "profiles.name": "Name",
+  "profiles.shell": "Shell",
+  "profiles.args": "Arguments",
+  "profiles.cwd": "Starting directory",
+  "profiles.cwdPlaceholder": "empty = user folder",
+  "profiles.env": "Environment variables",
+  "profiles.envHelp":
+    "One per line, as NAME=value (you can paste a .env). Values stay on this computer and never appear in logs.",
+  "profiles.font": "Font",
+  "profiles.fontSize": "Font size",
+  "profiles.scheme": "Terminal colors",
+  "profiles.inherit": "Inherit from Settings",
+  "profiles.notInstalled": "not found on this machine",
+  "profiles.shellMissing": "The shell {shell} was not found on this machine.",
+  "profiles.saveFailed": "Could not save the profiles: {error}",
+
+  "scheme.classic": "Classic",
+  "scheme.paper": "Paper",
+  "scheme.solarized": "Solarized",
+  "scheme.grape": "Grape",
+  "scheme.matrix": "Matrix",
+
+  "quake.title": "Quake mode",
+  "quake.help":
+    "A terminal slides down from the top of the screen with a global shortcut and hides with the same shortcut, always on top of other windows.",
+  "quake.enable": "Enable quake mode",
+  "quake.shortcut": "Global shortcut",
+  "quake.height": "Height",
+  "quake.width": "Width",
+  "quake.profile": "Quake profile",
+  "quake.profileDefault": "Use the default profile",
+  "quake.saved": "Shortcut registered.",
+  "quake.busy":
+    "The system refused \"{accel}\" — another app probably owns it. Pick another combination.",
+  "quake.bootBusy":
+    "The quake mode shortcut (\"{accel}\") could not be registered — another app already uses that combination.",
+  "quake.fixIt": "Change the shortcut",
+  "quake.escHint": "Esc hides",
 
   "toast.copied": "Copied",
 
@@ -109,7 +219,7 @@ const en: Record<MessageKey, string> = {
   "settings.shortcuts":
     "Shortcuts: Ctrl+Shift+T new tab · Ctrl+Shift+W close · Ctrl+Shift+D split · Ctrl+Tab switch · Ctrl+Shift+C/V copy/paste · Ctrl+Shift+F search · Ctrl+= / Ctrl+- zoom",
   "settings.about":
-    " — 100% offline terminal (native ConPTY/PTY + xterm.js, engine ported from LocalCode). Tabs, shell profiles (PowerShell/cmd/Git Bash/WSL · bash/zsh/fish), search and themes. Part of the Local suite.",
+    " — 100% offline terminal (native ConPTY/PTY + xterm.js, engine ported from LocalCode). Tabs, split pane, saved profiles (shell + directory + variables + appearance), quake mode via global shortcut, search and themes. Part of the Local suite.",
   "dlg.ok": "OK",
 };
 
@@ -119,6 +229,7 @@ const es: Record<MessageKey, string> = {
   "tabs.close": "Cerrar pestaña (Ctrl+Shift+W)",
   "top.search": "Buscar en la terminal (Ctrl+Shift+F)",
   "top.split": "Dividir panel (Ctrl+Shift+D)",
+  "top.profiles": "Perfiles",
   "top.settingsTitle": "Configuración",
 
   "search.placeholder": "Buscar…",
@@ -129,6 +240,58 @@ const es: Record<MessageKey, string> = {
   "term.exited": "Proceso terminado",
   "term.spawnError": "Error al iniciar el shell: {error}",
   "term.noShells": "Ningún shell detectado.",
+  "term.cwdMissing": "La carpeta del perfil ya no existe ({dir}) — abrimos en {fallback}.",
+  "term.envRejected":
+    "Variables de entorno rechazadas (nombre inválido): {keys}. El valor no se muestra.",
+  "term.openedHere": "Nueva pestaña en {dir}",
+
+  "profiles.title": "Perfiles",
+  "profiles.manage": "Administrar perfiles…",
+  "profiles.saved": "Perfiles guardados",
+  "profiles.detected": "Shells detectados",
+  "profiles.empty": "Todavía no hay perfiles guardados.",
+  "profiles.pick": "Elige un perfil a la izquierda, o crea uno nuevo.",
+  "profiles.add": "Nuevo",
+  "profiles.duplicate": "Duplicar",
+  "profiles.remove": "Eliminar",
+  "profiles.name": "Nombre",
+  "profiles.shell": "Shell",
+  "profiles.args": "Argumentos",
+  "profiles.cwd": "Directorio inicial",
+  "profiles.cwdPlaceholder": "vacío = carpeta del usuario",
+  "profiles.env": "Variables de entorno",
+  "profiles.envHelp":
+    "Una por línea, con el formato NOMBRE=valor (puedes pegar un .env). Los valores se quedan en este equipo y nunca aparecen en el registro.",
+  "profiles.font": "Fuente",
+  "profiles.fontSize": "Tamaño de fuente",
+  "profiles.scheme": "Colores de la terminal",
+  "profiles.inherit": "Heredar de la Configuración",
+  "profiles.notInstalled": "no encontrado en este equipo",
+  "profiles.shellMissing": "No se encontró el shell {shell} en este equipo.",
+  "profiles.saveFailed": "No se pudieron guardar los perfiles: {error}",
+
+  "scheme.classic": "Clásico",
+  "scheme.paper": "Papel",
+  "scheme.solarized": "Solarizado",
+  "scheme.grape": "Uva",
+  "scheme.matrix": "Matrix",
+
+  "quake.title": "Modo quake",
+  "quake.help":
+    "Una terminal baja desde la parte superior de la pantalla con un atajo global y se oculta con el mismo atajo, siempre por encima de las demás ventanas.",
+  "quake.enable": "Activar el modo quake",
+  "quake.shortcut": "Atajo global",
+  "quake.height": "Altura",
+  "quake.width": "Ancho",
+  "quake.profile": "Perfil del quake",
+  "quake.profileDefault": "Usar el perfil predeterminado",
+  "quake.saved": "Atajo registrado.",
+  "quake.busy":
+    "El sistema rechazó \"{accel}\" — probablemente ya es atajo de otra app. Elige otra combinación.",
+  "quake.bootBusy":
+    "No se pudo registrar el atajo del modo quake (\"{accel}\") — otra app ya usa esa combinación.",
+  "quake.fixIt": "Cambiar el atajo",
+  "quake.escHint": "Esc oculta",
 
   "toast.copied": "Copiado",
 
@@ -154,7 +317,7 @@ const es: Record<MessageKey, string> = {
   "settings.shortcuts":
     "Atajos: Ctrl+Shift+T nueva pestaña · Ctrl+Shift+W cierra · Ctrl+Shift+D divide · Ctrl+Tab cambia · Ctrl+Shift+C/V copia/pega · Ctrl+Shift+F busca · Ctrl+= / Ctrl+- zoom",
   "settings.about":
-    " — terminal 100% offline (ConPTY/PTY nativo + xterm.js, motor portado del LocalCode). Pestañas, perfiles de shell (PowerShell/cmd/Git Bash/WSL · bash/zsh/fish), búsqueda y temas. Parte de la suite Local.",
+    " — terminal 100% offline (ConPTY/PTY nativo + xterm.js, motor portado del LocalCode). Pestañas, panel dividido, perfiles guardados (shell + directorio + variables + apariencia), modo quake por atajo global, búsqueda y temas. Parte de la suite Local.",
   "dlg.ok": "OK",
 };
 

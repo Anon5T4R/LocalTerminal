@@ -5,6 +5,21 @@ Terminal **100% offline** da suíte Local — o motor de PTY do LocalCode
 
 ## Recursos
 
+**v0.5**
+- **Quake mode**: um atalho global faz um terminal descer do topo da tela,
+  sempre por cima, e o mesmo atalho o esconde (Esc também). Altura, largura,
+  perfil e a combinação são configuráveis. Vem **desligado** por padrão — ligar
+  sozinho tomaria uma tecla global de todo mundo. Se o sistema recusar a
+  combinação (outro app já a tem), o app **avisa** em vez de ficar mudo.
+- **Perfis**: conjuntos salvos de shell + diretório inicial + variáveis de
+  ambiente + aparência (fonte, tamanho, cores do terminal), escolhíveis no
+  menu ▾ ao abrir aba. Os valores das variáveis ficam só nesta máquina e
+  **nunca aparecem em log**. Diretório que não existe mais não vira silêncio:
+  o terminal abre na pasta do usuário e diz que caiu.
+- **"Abrir aqui" a partir do LocalFiles** (v0.6.0+): o gerenciador de arquivos
+  chama `LocalTerminal --cwd <pasta>`; se o app já estiver aberto, a pasta vira
+  uma aba nova em vez de uma segunda janela.
+
 **v0.2**
 - **Dividir painel** (Ctrl+Shift+D): dois terminais lado a lado na mesma aba,
   cada um com seu shell; fechar um painel volta pra um só

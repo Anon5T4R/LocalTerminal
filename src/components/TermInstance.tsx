@@ -12,9 +12,10 @@ import {
   resizeTerminal,
   spawnTerminal,
   writeTerminal,
-  type ShellProfile,
 } from "../lib/backend";
 import { t } from "../lib/i18n";
+import { appearanceOf, type TermProfile } from "../lib/profiles";
+import { isLightBg, schemeById } from "../lib/schemes";
 import { useUi } from "../state/ui";
 
 /** Controles que a instância expõe pro App (busca/foco/clipboard). */
@@ -29,9 +30,13 @@ export interface TermControls {
 
 interface Props {
   active: boolean;
-  profile: ShellProfile;
+  profile: TermProfile;
+  /** Diretório desta aba (o "abrir aqui" ganha do `cwd` do perfil). */
+  cwd?: string | null;
   onExit: () => void;
   onReady: (controls: TermControls) => void;
+  /** Desvio do que foi pedido (pasta sumida, variável recusada). */
+  onWarn?: (text: string) => void;
 }
 
 /** Combos reservados pro app (xterm não engole; o window handler cuida). */
@@ -47,7 +52,7 @@ function isAppCombo(e: KeyboardEvent): boolean {
  * Um terminal xterm ligado a um PTY (porte do LocalCode). A instância fica
  * montada mesmo fora da aba ativa (processo continua vivo).
  */
-export default function TermInstance({ active, profile, onExit, onReady }: Props) {
+export default function TermInstance({ active, profile, cwd, onExit, onReady, onWarn }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -55,8 +60,16 @@ export default function TermInstance({ active, profile, onExit, onReady }: Props
   const spawnedRef = useRef(false);
   const onExitRef = useRef(onExit);
   onExitRef.current = onExit;
-  const fontSize = useUi((s) => s.fontSize);
-  const fontFamily = useUi((s) => s.fontFamily);
+  const baseFontSize = useUi((s) => s.fontSize);
+  const baseFontFamily = useUi((s) => s.fontFamily);
+  // Perfil sobrescreve as Configurações campo a campo; `null` = herda.
+  const { fontSize, fontFamily } = appearanceOf(profile, {
+    fontFamily: baseFontFamily,
+    fontSize: baseFontSize,
+    theme: null,
+  });
+  const onWarnRef = useRef(onWarn);
+  onWarnRef.current = onWarn;
   const copyOnSelect = useUi((s) => s.copyOnSelect);
   const copyOnSelectRef = useRef(copyOnSelect);
   copyOnSelectRef.current = copyOnSelect;
@@ -90,10 +103,10 @@ export default function TermInstance({ active, profile, onExit, onReady }: Props
     const term = new Terminal({
       cursorBlink: true,
       cursorStyle: "block",
-      fontSize: useUi.getState().fontSize,
-      fontFamily: useUi.getState().fontFamily,
+      fontSize: profile.fontSize ?? useUi.getState().fontSize,
+      fontFamily: profile.fontFamily ?? useUi.getState().fontFamily,
       scrollback: 10000,
-      theme: xtermTheme(),
+      theme: xtermTheme(profile.theme),
       allowProposedApi: true,
     });
 
@@ -124,7 +137,7 @@ export default function TermInstance({ active, profile, onExit, onReady }: Props
 
     // Segue o tema do app (data-theme muda → cores do xterm mudam junto).
     const themeObserver = new MutationObserver(() => {
-      term.options.theme = xtermTheme();
+      term.options.theme = xtermTheme(profile.theme);
     });
     themeObserver.observe(document.documentElement, {
       attributes: true,
@@ -143,10 +156,23 @@ export default function TermInstance({ active, profile, onExit, onReady }: Props
     let unOut: (() => void) | undefined;
     let unExit: (() => void) | undefined;
 
-    spawnTerminal(profile.shell, profile.args, null)
-      .then(async (id) => {
+    // O "abrir aqui" (LocalFiles) ganha do diretório do perfil: o usuário
+    // acabou de apontar a pasta, é o pedido mais recente.
+    spawnTerminal(profile.shell, profile.args, cwd ?? profile.cwd ?? null, profile.env)
+      .then(async (res) => {
+        const id = res.sessionId;
         sessionRef.current = id;
         term.focus();
+        // Desvios do que foi pedido. Antes o backend caía no HOME em silêncio.
+        if (res.cwdFallback && res.requestedCwd) {
+          onWarnRef.current?.(
+            t("term.cwdMissing", { dir: res.requestedCwd, fallback: res.cwd ?? "" }),
+          );
+        }
+        if (res.rejectedEnv.length > 0) {
+          // Só as CHAVES — o valor pode ser um token.
+          onWarnRef.current?.(t("term.envRejected", { keys: res.rejectedEnv.join(", ") }));
+        }
         unOut = await onTerminalOutput(id, (data) => term.write(data));
         unExit = await onTerminalExit(id, () => {
           term.write(`\r\n\x1b[31m${t("term.exited")}\x1b[0m\r\n`);
@@ -268,18 +294,18 @@ const ANSI_DARK: Partial<ITheme> = {
   brightCyan: "#29b8db", brightWhite: "#e5e5e5",
 };
 
-/** Fundo claro? Decide por luminância perceptual (0..255). */
-function isLightBg(hex: string): boolean {
-  const h = hex.replace("#", "");
-  if (h.length < 6) return false;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return 0.299 * r + 0.587 * g + 0.114 * b > 150;
-}
-
-/** Deriva o tema do xterm das CSS vars do app; ANSI escolhido por luminância. */
-function xtermTheme(): ITheme {
+/**
+ * Tema do xterm. Sem esquema no perfil, deriva das CSS vars do app (o
+ * comportamento de sempre); com esquema, usa as cores dele — é o que permite
+ * duas abas com cores diferentes ao mesmo tempo. Em ambos os casos o conjunto
+ * ANSI é escolhido pela luminância do fundo, senão um esquema claro herdaria
+ * o vermelho brilhante do escuro e ficaria ilegível.
+ */
+function xtermTheme(schemeId: string | null): ITheme {
+  const s = schemeById(schemeId);
+  if (s) {
+    return { ...s, ...(isLightBg(s.background) ? ANSI_LIGHT : ANSI_DARK) };
+  }
   const cs = getComputedStyle(document.documentElement);
   const readVar = (name: string, fallback: string) =>
     cs.getPropertyValue(name).trim() || fallback;

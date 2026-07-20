@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { isTauri, listShells, type ShellProfile } from "./lib/backend";
+import {
+  isTauri,
+  listShells,
+  onOpenCwd,
+  onQuakeShortcutFailed,
+  profilesGet,
+  startupCwd,
+  type ShellProfile,
+} from "./lib/backend";
 import { t } from "./lib/i18n";
+import { menuEntries, pickEntry, type MenuEntry, type TermProfile } from "./lib/profiles";
 import { nextOrdinal, tabTitle } from "./lib/util";
+import ProfilesModal from "./components/ProfilesModal";
 import SettingsModal from "./components/SettingsModal";
 import TermInstance, { type TermControls } from "./components/TermInstance";
 import Toasts from "./components/Toasts";
@@ -9,7 +19,9 @@ import { useUi } from "./state/ui";
 
 interface Pane {
   key: string;
-  profileId: string;
+  profile: TermProfile;
+  /** Diretório pedido na abertura ("abrir aqui"); ganha do cwd do perfil. */
+  cwd: string | null;
 }
 interface Tab {
   key: string;
@@ -20,46 +32,59 @@ interface Tab {
 }
 
 export default function App() {
-  const [profiles, setProfiles] = useState<ShellProfile[]>([]);
+  const [shells, setShells] = useState<ShellProfile[]>([]);
+  const [saved, setSaved] = useState<TermProfile[]>([]);
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeKey, setActiveKey] = useState<string>("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [shortcutFailed, setShortcutFailed] = useState<string | null>(null);
   const controlsRef = useRef(new Map<string, TermControls>());
   const focusedPaneRef = useRef<string>("");
   const searchRef = useRef<HTMLInputElement>(null);
   const setSettingsOpen = useUi((s) => s.setSettingsOpen);
+  const setProfilesOpen = useUi((s) => s.setProfilesOpen);
+  const pushToast = useUi((s) => s.pushToast);
 
-  const profileOf = (id: string) => profiles.find((p) => p.id === id) ?? profiles[0];
+  const entries = menuEntries(shells, saved);
+  // Ref pra os handlers (atalho, evento de "abrir aqui") verem a lista atual
+  // sem virar dependência de effect e re-registrar listener a cada render.
+  const entriesRef = useRef(entries);
+  entriesRef.current = entries;
+
   const activeTab = () => tabs.find((t) => t.key === activeKey);
 
-  const openTab = (profileId?: string) => {
-    setTabs((ts) => {
-      const ui = useUi.getState();
-      const pid = profileId ?? ui.defaultProfile ?? (profiles[0]?.id as string | undefined) ?? "";
-      if (!pid) return ts;
-      const prof = profiles.find((p) => p.id === pid) ?? profiles[0];
-      const key = crypto.randomUUID();
-      const paneKey = crypto.randomUUID();
-      focusedPaneRef.current = paneKey;
-      setActiveKey(key);
-      return [
-        ...ts,
-        { key, profileId: prof.id, title: tabTitle(prof.name, nextOrdinal(ts, prof.id)), panes: [{ key: paneKey, profileId: prof.id }] },
-      ];
-    });
+  const openTab = (entryId?: string, cwd?: string | null) => {
+    const list = entriesRef.current;
+    const ui = useUi.getState();
+    const entry = pickEntry(list, entryId ?? ui.defaultProfile);
+    if (!entry) return;
+    const key = crypto.randomUUID();
+    const paneKey = crypto.randomUUID();
+    focusedPaneRef.current = paneKey;
+    setTabs((ts) => [
+      ...ts,
+      {
+        key,
+        profileId: entry.id,
+        title: tabTitle(entry.name, nextOrdinal(ts, entry.id)),
+        panes: [{ key: paneKey, profile: entry.profile, cwd: cwd ?? null }],
+      },
+    ]);
+    setActiveKey(key);
     setMenuOpen(false);
   };
 
-  /** Divide a aba ativa em 2 painéis (mesmo perfil). */
+  /** Divide a aba ativa em 2 painéis (mesmo perfil, mesmo diretório). */
   const splitActive = () => {
     setTabs((ts) =>
       ts.map((tb) => {
         if (tb.key !== activeKey || tb.panes.length >= 2) return tb;
         const paneKey = crypto.randomUUID();
         focusedPaneRef.current = paneKey;
-        return { ...tb, panes: [...tb.panes, { key: paneKey, profileId: tb.profileId }] };
+        const src = tb.panes[0];
+        return { ...tb, panes: [...tb.panes, { key: paneKey, profile: src.profile, cwd: src.cwd }] };
       }),
     );
   };
@@ -83,23 +108,51 @@ export default function App() {
 
   useEffect(() => {
     if (!isTauri) return;
-    void listShells().then(setProfiles);
+    void listShells().then(setShells);
+    void profilesGet().then(setSaved).catch(() => {});
   }, []);
 
-  // Primeira aba quando os perfis chegam; sem aba depois disso = fecha o app.
+  // "Abrir aqui" com o app JÁ aberto (2ª instância) — o caso comum.
+  useEffect(() => {
+    if (!isTauri) return;
+    const un = onOpenCwd((dir) => {
+      openTab(undefined, dir);
+      pushToast("info", t("term.openedHere", { dir }));
+    });
+    return () => void un.then((f) => f()).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // O atalho global não registrou no boot. Isso PRECISA aparecer: o atalho é a
+  // única porta do quake mode, e falhar calado entrega um recurso morto.
+  useEffect(() => {
+    if (!isTauri) return;
+    const un = onQuakeShortcutFailed(setShortcutFailed);
+    return () => void un.then((f) => f()).catch(() => {});
+  }, []);
+
+  // Primeira aba quando os shells chegam; sem aba depois disso = fecha o app.
   const everOpenedRef = useRef(false);
   useEffect(() => {
-    if (profiles.length === 0) return;
+    if (entries.length === 0) return;
     if (tabs.length === 0) {
       if (!everOpenedRef.current) {
         everOpenedRef.current = true;
-        openTab();
+        // Arranque com `--cwd` (LocalFiles com o terminal fechado): a 1ª aba
+        // já nasce na pasta pedida, em vez de abrir no HOME e depois pular.
+        if (isTauri) {
+          void startupCwd()
+            .then((dir) => openTab(undefined, dir))
+            .catch(() => openTab());
+        } else {
+          openTab();
+        }
       } else if (isTauri) {
         void import("@tauri-apps/api/window").then((m) => m.getCurrentWindow().close());
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profiles, tabs]);
+  }, [entries.length, tabs]);
 
   useEffect(() => {
     if (tabs.length > 0 && !tabs.some((x) => x.key === activeKey)) {
@@ -191,8 +244,25 @@ export default function App() {
     else c.findNext(query);
   };
 
+  const entryLabel = (e: MenuEntry) => (e.missing ? `${e.name} ⚠` : e.name);
+
   return (
     <div className="app">
+      {shortcutFailed && (
+        <div className="banner err">
+          <span>{t("quake.bootBusy", { accel: shortcutFailed })}</span>
+          <button
+            onClick={() => {
+              setShortcutFailed(null);
+              setSettingsOpen(true);
+            }}
+          >
+            {t("quake.fixIt")}
+          </button>
+          <button onClick={() => setShortcutFailed(null)}>✕</button>
+        </div>
+      )}
+
       <div className="topbar">
         <div className="tabs">
           {tabs.map((tab) => (
@@ -233,12 +303,42 @@ export default function App() {
             </button>
             {menuOpen && (
               <div className="profile-menu" onMouseLeave={() => setMenuOpen(false)}>
-                {profiles.length === 0 && <div className="muted">{t("term.noShells")}</div>}
-                {profiles.map((p) => (
-                  <button key={p.id} className="menu-item" onClick={() => openTab(p.id)}>
-                    {p.name}
-                  </button>
-                ))}
+                {entries.length === 0 && <div className="muted">{t("term.noShells")}</div>}
+                {entries.some((e) => e.saved) && (
+                  <div className="menu-head">{t("profiles.saved")}</div>
+                )}
+                {entries
+                  .filter((e) => e.saved)
+                  .map((e) => (
+                    <button
+                      key={e.id}
+                      className="menu-item"
+                      title={e.missing ? t("profiles.shellMissing", { shell: e.profile.shell }) : ""}
+                      onClick={() => openTab(e.id)}
+                    >
+                      {entryLabel(e)}
+                    </button>
+                  ))}
+                {entries.some((e) => !e.saved) && (
+                  <div className="menu-head">{t("profiles.detected")}</div>
+                )}
+                {entries
+                  .filter((e) => !e.saved)
+                  .map((e) => (
+                    <button key={e.id} className="menu-item" onClick={() => openTab(e.id)}>
+                      {e.name}
+                    </button>
+                  ))}
+                <div className="menu-sep" />
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setProfilesOpen(true);
+                  }}
+                >
+                  {t("profiles.manage")}
+                </button>
               </div>
             )}
           </div>
@@ -254,6 +354,9 @@ export default function App() {
           <button title={t("top.search")} onClick={() => setSearchOpen((v) => !v)}>
             🔍
           </button>
+          <button title={t("top.profiles")} onClick={() => setProfilesOpen(true)}>
+            ▤
+          </button>
           <button title={t("top.settingsTitle")} onClick={() => setSettingsOpen(true)}>
             ⚙
           </button>
@@ -267,32 +370,31 @@ export default function App() {
             className="pane-grid"
             style={{ display: tab.key === activeKey ? "flex" : "none" }}
           >
-            {tab.panes.map((pane) => {
-              const prof = profileOf(pane.profileId);
-              return prof ? (
-                <div
-                  key={pane.key}
-                  className="pane"
-                  onMouseDownCapture={() => (focusedPaneRef.current = pane.key)}
-                >
-                  {tab.panes.length > 1 && (
-                    <button
-                      className="pane-close"
-                      title={t("tabs.close")}
-                      onClick={() => closePane(tab.key, pane.key)}
-                    >
-                      ×
-                    </button>
-                  )}
-                  <TermInstance
-                    active={tab.key === activeKey}
-                    profile={prof}
-                    onExit={() => closePane(tab.key, pane.key)}
-                    onReady={(c) => controlsRef.current.set(pane.key, c)}
-                  />
-                </div>
-              ) : null;
-            })}
+            {tab.panes.map((pane) => (
+              <div
+                key={pane.key}
+                className="pane"
+                onMouseDownCapture={() => (focusedPaneRef.current = pane.key)}
+              >
+                {tab.panes.length > 1 && (
+                  <button
+                    className="pane-close"
+                    title={t("tabs.close")}
+                    onClick={() => closePane(tab.key, pane.key)}
+                  >
+                    ×
+                  </button>
+                )}
+                <TermInstance
+                  active={tab.key === activeKey}
+                  profile={pane.profile}
+                  cwd={pane.cwd}
+                  onExit={() => closePane(tab.key, pane.key)}
+                  onReady={(c) => controlsRef.current.set(pane.key, c)}
+                  onWarn={(text) => pushToast("error", text)}
+                />
+              </div>
+            ))}
           </div>
         ))}
 
@@ -322,7 +424,8 @@ export default function App() {
         )}
       </div>
 
-      <SettingsModal profiles={profiles} />
+      <ProfilesModal shells={shells} profiles={saved} onChange={setSaved} />
+      <SettingsModal entries={entries} />
       <Toasts />
     </div>
   );
